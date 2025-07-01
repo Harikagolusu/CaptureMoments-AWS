@@ -4,25 +4,25 @@ from datetime import datetime
 import logging
 import boto3
 import uuid
-import os
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Attr
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = 'your-secret-key'  # Replace with a real secret key
+app.secret_key = 'your-secret-key'  # Replace with a secure value
 
-# Set up logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize AWS services
+# AWS setup
 dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
 sns = boto3.client('sns', region_name='ap-south-1')
 
-# Define DynamoDB tables
+# DynamoDB Tables
 users_table = dynamodb.Table('photography_users')
 bookings_table = dynamodb.Table('photography_bookings')
-photographers_table = dynamodb.Table('photographers')  # ✅ Added
+photographers_table = dynamodb.Table('photographers')
 
 @app.route('/')
 def index():
@@ -52,8 +52,8 @@ def login():
             flash('Invalid username or password', 'error')
 
         except ClientError as e:
-            logger.error(f"Database error during login: {e}")
-            flash('An error occurred during login. Please try again.', 'error')
+            logger.error(f"Login error: {e}")
+            flash('Login failed. Please try again.', 'error')
 
     return render_template('login.html')
 
@@ -69,9 +69,8 @@ def signup():
         password = request.form['password']
 
         try:
-            response = users_table.get_item(Key={'username': username})
-            if 'Item' in response:
-                flash('Username already exists!', 'error')
+            if 'Item' in users_table.get_item(Key={'username': username}):
+                flash('Username already exists.', 'error')
                 return redirect(url_for('signup'))
 
             users_table.put_item(Item={
@@ -82,26 +81,25 @@ def signup():
                 'created_at': datetime.now().isoformat()
             })
 
-            flash('Registration successful! Please login.', 'success')
+            flash('Signup successful. Please log in.', 'success')
             return redirect(url_for('login'))
 
         except ClientError as e:
-            logger.error(f"Database error during signup: {e}")
-            flash('An error occurred during registration. Please try again.', 'error')
+            logger.error(f"Signup error: {e}")
+            flash('Signup failed. Try again.', 'error')
 
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('username', None)
-    session.pop('fullname', None)
-    flash('You have been logged out', 'info')
+    session.clear()
+    flash('Logged out successfully.', 'info')
     return redirect(url_for('index'))
 
 @app.route('/home')
 def home():
     if 'username' not in session:
-        return redirect(url_for('login', next=request.path))
+        return redirect(url_for('login'))
     return render_template('home.html', username=session['username'])
 
 @app.route('/about')
@@ -123,9 +121,9 @@ def photographers():
         return render_template('photographers.html',
                                photographers=photographers,
                                availability_data=availability_data)
-    except ClientError as e:
+    except Exception as e:
         logger.error(f"Error fetching photographers: {e}")
-        flash("Failed to load photographers", "error")
+        flash("Could not load photographers.", "error")
         return redirect(url_for('home'))
 
 @app.route('/booking', methods=['GET', 'POST'])
@@ -134,7 +132,11 @@ def booking():
         flash('Please login to book a photographer', 'error')
         return redirect(url_for('login', next=request.path))
 
-    booked_slots = []  # This could be loaded from bookings_table if needed
+    try:
+        response = bookings_table.scan()
+        booked_slots = [item['date_slot'] for item in response.get('Items', [])]
+    except:
+        booked_slots = []
 
     if request.method == 'POST':
         selected_date = request.form['selected_date']
@@ -153,7 +155,6 @@ def booking():
             flash("Slot already booked!", "error")
             return redirect(url_for('booking'))
 
-        # ✅ Save booking to DynamoDB
         booking_id = str(uuid.uuid4())
         try:
             bookings_table.put_item(Item={
@@ -171,31 +172,11 @@ def booking():
                 'timestamp': datetime.now().isoformat()
             })
 
-            # ✅ Optional: Send SNS notification
+            # ✅ Optional SNS notification
             # sns.publish(
             #     TopicArn='your-sns-topic-arn',
-            #     Message=f"New Booking by {name} on {slot_id}",
+            #     Message=f"Booking confirmed for {name} on {slot_id}",
             #     Subject="New Booking Alert"
             # )
 
-            flash("Booking confirmed successfully!", "success")
-            return redirect(url_for('success'))
-
-        except ClientError as e:
-            logger.error(f"Error saving booking: {e}")
-            flash("Failed to confirm booking. Try again later.", "error")
-
-    return render_template('booking.html', booked_data=booked_slots)
-
-@app.route('/success', methods=['GET', 'POST'])
-def success():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-    return render_template('success.html')
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+            flash("Booking confirmed successfully!", "succes
