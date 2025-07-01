@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About | CaptureMoments</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: #fdfdfd;
+      color: #1e293b;
+    }
+
+    header {
+      background-color: #ffffff;
+      padding: 1.5rem 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(8, 184, 228, 0.856);
+      position: sticky;
+      top: 0;
+      z-index: 100;http://127.0.0.1:5500/templates/about.html#
+    }
+
+    .brand {
+      font-size: 2rem;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .Capture {
+      color: #01080a;
+  }
+
+     .Moments {
+      color: #1694ce;
+  }
+
+    nav a {
+      margin-left: 2rem;
+      color: #1e293b;
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.3s ease;
+    }
+
+    .hero-banner {
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      height: 50vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      text-align: center;
+      padding: 0 2rem;
+    }
+
+    .hero-banner h1 {
+      font-size: 3rem;
+      max-width: 700px;
+    }
+
+    .section {
+      max-width: 1100px;
+      margin: 4rem auto;
+      padding: 0 2rem;
+    }
+
+    .section-title {
+      font-size: 2.4rem;
+      margin-bottom: 1rem;
+      color: #0f172a;
+      border-left: 6px solid #14b8a6;
+      padding-left: 1rem;
+    }
+
+    .highlight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 2rem;
+    }
+
+    .highlight-text p {
+      color: #040506;
+      margin-bottom: 1.5rem;
+    }
+
+    .highlight-point {
+      background: #0598c4;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .highlight-point:hover {
+      transform: translateY(-4px);
+    }
+
+    .highlight-img img {
+      width: 120%;
+      height: 90%;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .team {
+      text-align: center;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+
+    .member {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.04);
+      padding: 2rem 1rem;
+      transition: 0.3s ease;
+    }
+
+    .member:hover {
+      transform: translateY(-8px);
+    }
+
+    .member img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+    }
+
+    .member h4 {
+      font-size: 1.2rem;
+      color: #0f172a;
+    }
+
+    .member p {
+      font-size: 0.95rem;
+      color: #64748b;
+    }
+
+    footer {
+      background: #0f172a;
+      color: white;
+      padding: 3rem 2rem;
+    }
+
+    .footer-flex {
+      max-width: 1100px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+    }
+
+    .footer-section h4 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: #0ea5e9;
+    }
+
+    .footer-section a {
+      display: block;
+      color: #e2e8f0;
+      text-decoration: none;
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-section a:hover {
+      color: #0b8fbe;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .highlight-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-banner h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="#" class="brand"><span class="Capture">Capture</span><span class="Moments">Moments</Moments></a>
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('services') }}">Services</a>
+      <a href="{{ url_for('photographers') }}">Photographers</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero-banner">
+    <h1>Capture Every Special Moment</h1>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Why We Exist</h2>
+    <div class="highlight-grid">
+      <div class="highlight-text">
+        <p>We started with a mission to bring powerful storytelling into every frame. Our professional photographers are here to turn your emotions into everlasting visuals, whether it's a celebration or a serene moment.</p>
+        <div class="highlight-point">
+          <strong>🎯 Top Talent:</strong> Carefully selected professionals ensuring the best quality.
+        </div>
+        <div class="highlight-point">
+          <strong>🤝 Personalized Approach:</strong> We mold every session to your preferences.
+        </div>
+        <div class="highlight-point">
+          <strong>⚡ Easy & Transparent:</strong> Smooth scheduling with no hidden charges.
+        </div>
+      </div>
+      <div class="highlight-img">
+        <img src="../static/images/Team.jpg " alt="CaptureMoments team" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section team">
+    <h2 class="section-title">Meet the Team</h2>
+    <div class="team-grid">
+      <div class="member">
+        <img src="../static/images/Sushanth.png" alt="Sushanth">
+        <h4>Sushnath Agarwal</h4>
+        <p>Wedding Moments</p>
+        <p>"Making love stories timeless."</p>
+      </div>
+      <div class="member">
+        <img src="../static/images/Max.jpg" alt="Mike">
+        <h4>Max Daneil</h4>
+        <p>Portrait Visionary</p>
+        <p>"Faces are stories waiting to be told."</p>
+      </div>
+      <div class="member">
+        <img src="../static/images/Alex.jpg" alt="Emma">
+        <h4>Alex</h4>
+        <p>Commercial Expert</p>
+        <p>"Turning products into experiences."</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-flex">
+      <div class="footer-section">
+        <h4>About CaptureMoments</h4>
+        <p>We help you preserve life’s best memories with handpicked photographers and beautiful imagery.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Explore</h4>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('services') }}">Services</a>
+        <a href="{{ url_for('photographers') }}">Photographers</a>
+      </div>
+      <div class="footer-section">
+        <h4>Get in Touch</h4>
+        <p>Email: hello@capturemoments.com</p>
+        <p>Phone: (123) 456-7890</p>
+        <p>Location: 42 Lightframe Ave, Visuals Town</p>
+      </div>
+    </div>
+    <div class="footer-note">
+      &copy; 2025 CaptureMoments. Made with ❤️ and creativity.
+    </div>
+  </footer>
+</body>
+</html>
+

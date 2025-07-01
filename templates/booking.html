@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CaptureMoments - Book a Photographer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #2d2d2d;
+      line-height: 1.6;
+    }
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 1.5rem 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0ea5e9;
+      text-decoration: none;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .nav-link {
+      color: #111827;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+
+    .nav-link:hover {
+      color: #0ea5e9;
+    }
+
+    .booking-hero {
+      height: 40vh;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .booking-hero h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+    }
+
+    .booking-form-container {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 2rem;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-title {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #0ea5e9;
+      position: relative;
+    }
+
+    .form-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: #3b82f6;
+      border-radius: 2px;
+    }
+
+    .booking-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    label {
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+    }
+
+    .submit-btn {
+      grid-column: span 2;
+      padding: 1rem;
+      background: #0ea5e9;
+      color: white;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .submit-btn:hover {
+      background-color: #0284c7;
+      transform: translateY(-2px);
+    }
+
+    footer {
+      background: #0f172a;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      margin-top: 5rem;
+    }
+
+    @media (max-width: 768px) {
+      .booking-form {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group.full-width {
+        grid-column: span 1;
+      }
+
+      .submit-btn {
+        grid-column: span 1;
+      }
+
+      .booking-hero h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="#" class="logo"><span style="color:black">Capture</span>Moments</a>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+      <a href="{{ url_for('about') }}" class="nav-link">About</a>
+      <a href="{{ url_for('services') }}" class="nav-link">Services</a>
+      <a href="{{ url_for('photographers') }}" class="nav-link">Photographers</a>
+      <a href="{{ url_for('contact') }}" class="nav-link">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="booking-hero">
+    <h1>Book Your Photographer</h1>
+  </section>
+
+  <!-- Form -->
+  <div class="booking-form-container">
+    <h2 class="form-title">Booking Details</h2>
+    <form class="booking-form" action="{{ url_for('booking') }}" method="POST" id="booking-form">
+      <div class="form-group full-width">
+        <label for="event-type">Event Type</label>
+        <select id="event-type" name="event_type" required>
+          <option value="">Select Event Type</option>
+          <option value="wedding">Wedding</option>
+          <option value="portrait">Portrait</option>
+          <option value="commercial">Commercial</option>
+          <option value="event">Event</option>
+          <option value="family">Family</option>
+          <option value="product">Product</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="start-date">Start Date</label>
+        <input type="date" id="start-date" name="start_date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="end-date">End Date</label>
+        <input type="date" id="end-date" name="end_date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" required>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="package">Package</label>
+        <select id="package" name="package" required>
+          <option value="">Select Package</option>
+          <option value="basic">Basic - $250</option>
+          <option value="standard">Standard - $500</option>
+          <option value="premium">Premium - $1000</option>
+        </select>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="photographer">Photographer</label>
+        <select id="photographer" name="photographer" required>
+          <option value="">Select Photographer</option>
+          <option value="1">John</option>
+          <option value="2">Max</option>
+          <option value="2">Sushanth</option>
+        </select>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="payment">Payment Method</label>
+        <select id="payment" name="payment" required>
+          <option value="">Select Method</option>
+          <option value="credit-card">Credit Card</option>
+          <option value="debit-card">Debit Card</option>
+          <option value="paypal">PayPal</option>
+        </select>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="notes">Special Requests</label>
+        <textarea id="notes" name="notes" rows="4"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn">Book Now</button>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 CaptureMoments. All rights reserved.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('start-date').min = today;
+      document.getElementById('end-date').min = today;
+
+      document.getElementById('start-date').addEventListener('change', function () {
+        document.getElementById('end-date').min = this.value;
+      });
+    });
+  </script>
+</body>
+</html>
