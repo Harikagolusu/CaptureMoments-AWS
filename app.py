@@ -9,6 +9,7 @@ from botocore.exceptions import ClientError
 
 # Flask app setup
 app = Flask(__name__)
+app.secret_key = 'your-secret-key'  # Replace with a real secret key
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,7 @@ sns = boto3.client('sns', region_name='ap-south-1')
 # Define DynamoDB tables
 users_table = dynamodb.Table('photography_users')
 bookings_table = dynamodb.Table('photography_bookings')
+photographers_table = dynamodb.Table('photographers')  # ✅ Added
 
 @app.route('/')
 def index():
@@ -38,7 +40,6 @@ def login():
         password = request.form['password']
 
         try:
-            # Query the users table
             response = users_table.get_item(Key={'username': username})
             user = response.get('Item')
 
@@ -46,11 +47,6 @@ def login():
                 session['username'] = username
                 session['fullname'] = user['fullname']
                 flash('Login successful!', 'success')
-
-                # Check if there's a next parameter in the query string for redirection
-                next_page = request.args.get('next')
-                if next_page:
-                    return redirect(next_page)
                 return redirect(url_for('home'))
 
             flash('Invalid username or password', 'error')
@@ -73,22 +69,19 @@ def signup():
         password = request.form['password']
 
         try:
-            # Check if username already exists
             response = users_table.get_item(Key={'username': username})
             if 'Item' in response:
                 flash('Username already exists!', 'error')
                 return redirect(url_for('signup'))
 
-            # Create new user in DynamoDB
-            users_table.put_item(
-                Item={
-                    'username': username,
-                    'password': generate_password_hash(password),
-                    'fullname': fullname,
-                    'email': email,
-                    'created_at': datetime.now().isoformat()
-                }
-            )
+            users_table.put_item(Item={
+                'username': username,
+                'password': generate_password_hash(password),
+                'fullname': fullname,
+                'email': email,
+                'created_at': datetime.now().isoformat()
+            })
+
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
 
@@ -121,7 +114,19 @@ def services():
 
 @app.route('/photographers')
 def photographers():
-    return render_template('photographers.html')
+    try:
+        response = photographers_table.scan()
+        photographers = response.get('Items', [])
+        availability_data = {
+            p['photographer_id']: p.get('availability', []) for p in photographers
+        }
+        return render_template('photographers.html',
+                               photographers=photographers,
+                               availability_data=availability_data)
+    except ClientError as e:
+        logger.error(f"Error fetching photographers: {e}")
+        flash("Failed to load photographers", "error")
+        return redirect(url_for('home'))
 
 @app.route('/booking', methods=['GET', 'POST'])
 def booking():
@@ -129,11 +134,7 @@ def booking():
         flash('Please login to book a photographer', 'error')
         return redirect(url_for('login', next=request.path))
 
-    # Dummy booked slots
-    booked_slots = [
-        "2025-06-22-10:00 AM",
-        "2025-06-23-2:00 PM"
-    ]
+    booked_slots = []  # This could be loaded from bookings_table if needed
 
     if request.method == 'POST':
         selected_date = request.form['selected_date']
@@ -152,28 +153,49 @@ def booking():
             flash("Slot already booked!", "error")
             return redirect(url_for('booking'))
 
-        # Save booking logic (replace with actual database save)
-        logger.info(f"New booking: {slot_id} by {name}")
+        # ✅ Save booking to DynamoDB
+        booking_id = str(uuid.uuid4())
+        try:
+            bookings_table.put_item(Item={
+                'booking_id': booking_id,
+                'username': session['username'],
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'event_type': event_type,
+                'photographer': photographer,
+                'package': package,
+                'date_slot': slot_id,
+                'notes': notes,
+                'payment': payment,
+                'timestamp': datetime.now().isoformat()
+            })
 
-        flash("Booking confirmed successfully!", "success")
-        return redirect(url_for('success'))
+            # ✅ Optional: Send SNS notification
+            # sns.publish(
+            #     TopicArn='your-sns-topic-arn',
+            #     Message=f"New Booking by {name} on {slot_id}",
+            #     Subject="New Booking Alert"
+            # )
+
+            flash("Booking confirmed successfully!", "success")
+            return redirect(url_for('success'))
+
+        except ClientError as e:
+            logger.error(f"Error saving booking: {e}")
+            flash("Failed to confirm booking. Try again later.", "error")
 
     return render_template('booking.html', booked_data=booked_slots)
 
-
-
-@app.route('/success',methods=['GET','POST'])
+@app.route('/success', methods=['GET', 'POST'])
 def success():
     if 'username' not in session:
         return redirect(url_for('login'))
-    # Just render the success template without passing booking details
     return render_template('success.html')
 
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
-if __name__ == '__main__':
-    # Create tables if they don't exsist
 
-    # Run the Flask app
-    app.run(host='0.0.0.0',port=5000, debug=False)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
