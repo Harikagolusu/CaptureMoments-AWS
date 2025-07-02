@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # AWS setup
-dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
-sns = boto3.client('sns', region_name='ap-south-1')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+sns = boto3.client('sns', region_name='us-east-1')
 
 # DynamoDB Tables
 users_table = dynamodb.Table('photography_users')
