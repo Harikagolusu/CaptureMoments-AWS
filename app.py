@@ -4,25 +4,25 @@ from datetime import datetime
 import logging
 import boto3
 import uuid
-from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Attr
+from botocore.exceptions import ClientError, NoCredentialsError
 
-# Flask app setup
 app = Flask(__name__)
-app.secret_key = 'your-secret-key'  # Replace with a secure value
+app.secret_key = 'your-secret-key'
 
-# Logging
+# Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AWS setup
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-sns = boto3.client('sns', region_name='us-east-1')
-
-# DynamoDB Tables
-users_table = dynamodb.Table('photography_users')
-bookings_table = dynamodb.Table('photography_bookings')
-photographers_table = dynamodb.Table('photographers')
+# AWS setup with credential error handling
+try:
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    sns = boto3.client('sns', region_name='us-east-1')
+    users_table = dynamodb.Table('photography_users')
+    bookings_table = dynamodb.Table('photography_bookings')
+    photographers_table = dynamodb.Table('photographers')
+except NoCredentialsError:
+    print("❌ AWS credentials not found. Run `aws configure` or deploy on EC2 with IAM role.")
+    exit()
 
 @app.route('/')
 def index():
@@ -69,7 +69,8 @@ def signup():
         password = request.form['password']
 
         try:
-            if 'Item' in users_table.get_item(Key={'username': username}):
+            response = users_table.get_item(Key={'username': username})
+            if 'Item' in response:
                 flash('Username already exists.', 'error')
                 return redirect(url_for('signup'))
 
@@ -171,13 +172,6 @@ def booking():
             'timestamp': datetime.now().isoformat()
         })
 
-        # Optional: Send SNS notification
-        # sns.publish(
-        #     TopicArn='your-sns-topic-arn',
-        #     Message=f"Booking confirmed for {name} on {slot_id}",
-        #     Subject="New Booking Alert"
-        # )
-
         flash("Booking confirmed successfully!", "success")
         return redirect(url_for('success'))
 
@@ -189,4 +183,4 @@ def success():
 
 if __name__ == '__main__':
     print("Flask server starting on http://localhost:5000")
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
