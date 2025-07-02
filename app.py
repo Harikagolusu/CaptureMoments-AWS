@@ -155,7 +155,7 @@ def booking():
             flash("Slot already booked!", "error")
             return redirect(url_for('booking'))
 
-        booking_id = str(uuid.uuid4())
+            booking_id = str(uuid.uuid4())
             bookings_table.put_item(Item={
                 'booking_id': booking_id,
                 'username': session['username'],
