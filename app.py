@@ -180,6 +180,9 @@ def booking():
 
             flash("Booking confirmed successfully!", "success")
             return redirect(url_for('success'))
-        if __name__ == '__main__':
-            app.run(debug=True)
+            # ⬇️ Add this at the end of app.py
+         if __name__ == '__main__':
+             print("Flask server starting on http://localhost:5000")
+             app.run(debug=True)
+
 
