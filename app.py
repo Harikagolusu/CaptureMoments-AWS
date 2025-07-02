@@ -186,8 +186,3 @@ def booking():
             logger.error(f"Error saving booking: {e}")
             flash("Failed to confirm booking. Try again later.", "error")
 
-if __name__ == '__main__':
-    print("✅ Flask server starting on http://localhost:5000")
-    app.run(debug=True)
-
-
