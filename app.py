@@ -1,3 +1,131 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import logging
+import boto3
+import uuid
+from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Attr
+
+# Flask app setup
+app = Flask(__name__)
+app.secret_key = 'your-secret-key'  # Replace with a secure value
+
+# Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# AWS setup
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+sns = boto3.client('sns', region_name='us-east-1')
+
+# DynamoDB Tables
+users_table = dynamodb.Table('photography_users')
+bookings_table = dynamodb.Table('photography_bookings')
+photographers_table = dynamodb.Table('photographers')
+
+@app.route('/')
+def index():
+    if 'username' in session:
+        return redirect(url_for('home'))
+    return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'username' in session:
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        try:
+            response = users_table.get_item(Key={'username': username})
+            user = response.get('Item')
+
+            if user and check_password_hash(user['password'], password):
+                session['username'] = username
+                session['fullname'] = user['fullname']
+                flash('Login successful!', 'success')
+                return redirect(url_for('home'))
+
+            flash('Invalid username or password', 'error')
+
+        except ClientError as e:
+            logger.error(f"Login error: {e}")
+            flash('Login failed. Please try again.', 'error')
+
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if 'username' in session:
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        fullname = request.form['fullname']
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        try:
+            if 'Item' in users_table.get_item(Key={'username': username}):
+                flash('Username already exists.', 'error')
+                return redirect(url_for('signup'))
+
+            users_table.put_item(Item={
+                'username': username,
+                'password': generate_password_hash(password),
+                'fullname': fullname,
+                'email': email,
+                'created_at': datetime.now().isoformat()
+            })
+
+            flash('Signup successful. Please log in.', 'success')
+            return redirect(url_for('login'))
+
+        except ClientError as e:
+            logger.error(f"Signup error: {e}")
+            flash('Signup failed. Try again.', 'error')
+
+    return render_template('signup.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out successfully.', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/home')
+def home():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('home.html', username=session['username'])
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/services')
+def services():
+    return render_template('services.html')
+
+@app.route('/photographers')
+def photographers():
+    try:
+        response = photographers_table.scan()
+        photographers = response.get('Items', [])
+        availability_data = {
+            p['photographer_id']: p.get('availability', []) for p in photographers
+        }
+        return render_template('photographers.html',
+                               photographers=photographers,
+                               availability_data=availability_data)
+    except Exception as e:
+        logger.error(f"Error fetching photographers: {e}")
+        flash("Could not load photographers.", "error")
+        return redirect(url_for('home'))
+
 @app.route('/booking', methods=['GET', 'POST'])
 def booking():
     if 'username' not in session:
@@ -43,7 +171,7 @@ def booking():
             'timestamp': datetime.now().isoformat()
         })
 
-        # ✅ Optional SNS notification
+        # Optional: Send SNS notification
         # sns.publish(
         #     TopicArn='your-sns-topic-arn',
         #     Message=f"Booking confirmed for {name} on {slot_id}",
@@ -55,11 +183,9 @@ def booking():
 
     return render_template('booking.html')
 
-
 @app.route('/success')
 def success():
     return render_template('success.html')
-
 
 if __name__ == '__main__':
     print("Flask server starting on http://localhost:5000")
