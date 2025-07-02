@@ -156,7 +156,6 @@ def booking():
             return redirect(url_for('booking'))
 
         booking_id = str(uuid.uuid4())
-        try:
             bookings_table.put_item(Item={
                 'booking_id': booking_id,
                 'username': session['username'],
@@ -181,8 +180,3 @@ def booking():
 
             flash("Booking confirmed successfully!", "success")
             return redirect(url_for('success'))
-
-        except ClientError as e:
-            logger.error(f"Error saving booking: {e}")
-            flash("Failed to confirm booking. Try again later.", "error")
-
