@@ -180,3 +180,6 @@ def booking():
 
             flash("Booking confirmed successfully!", "success")
             return redirect(url_for('success'))
+        if __name__ == '__main__':
+            app.run(debug=True)
+
