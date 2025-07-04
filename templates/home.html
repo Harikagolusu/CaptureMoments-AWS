@@ -135,27 +135,29 @@
         }
 
 .book-now-btn {
-  background: linear-gradient(135deg, #2563eb, #1e40af); /* Blue gradient */
+  background: linear-gradient(to right, #2563eb, #1d4ed8); /* Blue gradient */
   color: #ffffff;
-  border: none;
-  padding: 0.9rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
   font-weight: 600;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-.book-now-btn:hover {
-  background: linear-gradient(135deg, #1e40af, #2563eb); /* Reversed gradient */
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-.book-now-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
 }
 
+.book-now-btn:hover {
+  background: linear-gradient(to right, #1d4ed8, #2563eb); /* Reverse on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.book-now-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
