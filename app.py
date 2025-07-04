@@ -6,7 +6,7 @@ import re
 import uuid
 import logging
 
-DEVELOPMENT_MODE = True  # Set to False to enable AWS
+DEVELOPMENT_MODE = False  # Set to False to enable AWS
 
 app = Flask(__name__)
 app.secret_key = 'dev'
