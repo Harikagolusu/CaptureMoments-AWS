@@ -2,28 +2,29 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
-import logging
 import os
 import re
 import uuid
+import logging
 
-# Toggle local development mode
+# Enable development mode
 DEVELOPMENT_MODE = True
 
-# Load .env
+# Load environment variables
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "fallback-dev-secret")
+app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 
-# Logging
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AWS setup
+# AWS mock setup
 if not DEVELOPMENT_MODE:
     import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError
+    from botocore.exceptions import NoCredentialsError
 
     try:
         session_aws = boto3.Session()
@@ -44,6 +45,7 @@ else:
     bookings_table = None
     photographers_table = None
 
+# Routes
 @app.route('/')
 def index():
     if 'username' in session:
@@ -58,14 +60,13 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        next_page = request.args.get('next')
 
         if DEVELOPMENT_MODE:
             if username == "testuser" and password == "1234":
                 session['username'] = "testuser"
                 session['fullname'] = "Test User"
                 flash("Login successful (mock)", "success")
-                return redirect(next_page or url_for('home'))
+                return redirect(url_for('home'))
             flash("Mock login failed", "error")
         else:
             try:
@@ -74,12 +75,12 @@ def login():
                 if user and check_password_hash(user['password'], password):
                     session['username'] = username
                     session['fullname'] = user['fullname']
-                    flash('Login successful!', 'success')
-                    return redirect(next_page or url_for('home'))
-                flash('Invalid username or password', 'error')
+                    flash("Login successful!", "success")
+                    return redirect(url_for('home'))
+                flash("Invalid username or password", "error")
             except Exception as e:
                 logger.error(f"Login error: {e}")
-                flash('Login failed. Please try again.', 'error')
+                flash("Login failed. Please try again.", "error")
 
     return render_template('login.html')
 
@@ -99,13 +100,13 @@ def signup():
             return redirect(url_for('signup'))
 
         if DEVELOPMENT_MODE:
-            flash("Mock signup successful. Please log in.", "success")
+            flash("Mock signup successful. Please login.", "success")
             return redirect(url_for('login'))
         else:
             try:
                 response = users_table.get_item(Key={'username': username})
                 if 'Item' in response:
-                    flash('Username already exists.', 'error')
+                    flash("Username already exists.", "error")
                     return redirect(url_for('signup'))
 
                 users_table.put_item(Item={
@@ -116,19 +117,18 @@ def signup():
                     'created_at': datetime.now().isoformat()
                 })
 
-                flash('Signup successful. Please log in.', 'success')
+                flash("Signup successful. Please login.", "success")
                 return redirect(url_for('login'))
-
             except Exception as e:
                 logger.error(f"Signup error: {e}")
-                flash('Signup failed. Try again.', 'error')
+                flash("Signup failed. Try again.", "error")
 
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('Logged out successfully.', 'info')
+    flash("Logged out successfully.", "info")
     return redirect(url_for('index'))
 
 @app.route('/home')
@@ -188,6 +188,11 @@ def booking():
         return redirect(url_for('login', next=request.path))
 
     if request.method == 'POST':
+        # Log form submission
+        print("POST request received")
+        print("Form data:", request.form)
+
+        # Extract fields
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         name = request.form.get('name')
@@ -199,9 +204,7 @@ def booking():
         payment = request.form.get('payment')
         notes = request.form.get('notes', '')
 
-        print("Form submission received")
-        print("Data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
-
+        # Validate email & phone
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
             return redirect(url_for('booking'))
@@ -213,8 +216,8 @@ def booking():
         booking_id = f"{photographer}-{uuid.uuid4()}"
 
         if DEVELOPMENT_MODE:
-            print("Mock booking created:", booking_id)
-            flash("Mock booking confirmed successfully!", "success")
+            print("Booking saved (mock):", name, event_type, photographer)
+            flash("Mock booking successful!", "success")
             return redirect(url_for('success'))
         else:
             try:
@@ -227,30 +230,28 @@ def booking():
                     'event_type': event_type,
                     'photographer': photographer,
                     'package': package,
-                    'start_date': start_date,
-                    'end_date': end_date,
+                    'date_slot': f"{start_date} to {end_date}",
                     'notes': notes,
                     'payment': payment,
                     'timestamp': datetime.now().isoformat()
                 })
-                flash("Booking confirmed successfully!", "success")
+                flash("Booking confirmed!", "success")
                 return redirect(url_for('success'))
-
             except Exception as e:
                 logger.error(f"Booking error: {e}")
-                flash("Booking failed. Please try again.", "error")
+                flash("Booking failed. Try again.", "error")
                 return redirect(url_for('booking'))
 
     return render_template('booking.html')
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
 
 @app.route('/success')
 def success():
     return render_template('success.html')
 
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
 if __name__ == '__main__':
-    print("Flask server starting on http://localhost:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print("Flask server running at http://localhost:5000")
+    app.run(debug=True)
