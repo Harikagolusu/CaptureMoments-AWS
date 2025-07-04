@@ -7,7 +7,7 @@ import os
 import re
 import uuid
 
-# Enable development mode
+# Toggle local development mode
 DEVELOPMENT_MODE = True
 
 # Load .env
@@ -20,10 +20,11 @@ app.secret_key = os.environ.get("SECRET_KEY", "fallback-dev-secret")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AWS setup (skipped in development)
+# AWS setup
 if not DEVELOPMENT_MODE:
     import boto3
-    from botocore.exceptions import NoCredentialsError
+    from botocore.exceptions import ClientError, NoCredentialsError
+
     try:
         session_aws = boto3.Session()
         credentials = session_aws.get_credentials()
@@ -35,10 +36,10 @@ if not DEVELOPMENT_MODE:
         bookings_table = dynamodb.Table('photography_bookings')
         photographers_table = dynamodb.Table('photographers')
     except NoCredentialsError:
-        logger.error("❌ AWS credentials not found.")
+        logger.error("AWS credentials not found.")
         exit()
 else:
-    logger.warning("🧪 DEVELOPMENT MODE: AWS disabled.")
+    logger.warning("DEVELOPMENT MODE: AWS disabled.")
     users_table = None
     bookings_table = None
     photographers_table = None
@@ -55,8 +56,8 @@ def login():
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form['username']
+        password = request.form['password']
         next_page = request.args.get('next')
 
         if DEVELOPMENT_MODE:
@@ -88,10 +89,10 @@ def signup():
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        fullname = request.form.get('fullname')
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
+        fullname = request.form['fullname']
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
@@ -149,14 +150,14 @@ def photographers():
     if DEVELOPMENT_MODE:
         photographers = [
             {
-                'photographer_id': '1',
+                'photographer_id': 'p1',
                 'name': 'John Doe',
-                'availability': ['2025-07-10', '2025-07-12']
+                'availability': ['2025-07-10-10AM', '2025-07-12-4PM']
             },
             {
-                'photographer_id': '2',
+                'photographer_id': 'p2',
                 'name': 'Jane Smith',
-                'availability': ['2025-07-15', '2025-07-18']
+                'availability': ['2025-07-15-9AM', '2025-07-18-6PM']
             }
         ]
         availability_data = {
@@ -187,8 +188,6 @@ def booking():
         return redirect(url_for('login', next=request.path))
 
     if request.method == 'POST':
-        print("Form submission received")
-
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         name = request.form.get('name')
@@ -200,11 +199,8 @@ def booking():
         payment = request.form.get('payment')
         notes = request.form.get('notes', '')
 
-        print("📄 Data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
-
-        if not all([start_date, end_date, name, email, phone, event_type, photographer, package, payment]):
-            flash("Please fill all required fields", "error")
-            return redirect(url_for('booking'))
+        print("Form submission received")
+        print("Data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
