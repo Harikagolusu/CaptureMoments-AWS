@@ -26,7 +26,7 @@ if not DEVELOPMENT_MODE:
             raise NoCredentialsError()
 
         dynamodb = aws_session.resource('dynamodb', region_name='us-east-1')
-        sns = aws_session.client('sns', region_name='ap-east-1')
+        sns = aws_session.client('sns', region_name='us-east-1')
         users_table = dynamodb.Table('photography_users')
         bookings_table = dynamodb.Table('photography_bookings')
         photographers_table = dynamodb.Table('photographers')
