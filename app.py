@@ -7,7 +7,7 @@ import os
 import re
 import uuid
 
-# Toggle local development mode
+# Enable development mode
 DEVELOPMENT_MODE = True
 
 # Load .env
@@ -20,11 +20,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "fallback-dev-secret")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AWS setup
+# AWS setup (skipped in development)
 if not DEVELOPMENT_MODE:
     import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError
-
+    from botocore.exceptions import NoCredentialsError
     try:
         session_aws = boto3.Session()
         credentials = session_aws.get_credentials()
@@ -187,9 +186,9 @@ def booking():
         flash('Please login to book a photographer', 'error')
         return redirect(url_for('login', next=request.path))
 
-    booked_slots = []
-
     if request.method == 'POST':
+        print("📩 Form submission received")
+
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         name = request.form.get('name')
@@ -200,6 +199,8 @@ def booking():
         package = request.form.get('package')
         payment = request.form.get('payment')
         notes = request.form.get('notes', '')
+
+        print("📄 Data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
 
         if not all([start_date, end_date, name, email, phone, event_type, photographer, package, payment]):
             flash("Please fill all required fields", "error")
@@ -213,14 +214,10 @@ def booking():
             flash("Invalid phone number", "error")
             return redirect(url_for('booking'))
 
-        slot_id = f"{photographer}-{start_date}-{end_date}"
-        if slot_id in booked_slots:
-            flash("Slot already booked!", "error")
-            return redirect(url_for('booking'))
-
         booking_id = f"{photographer}-{uuid.uuid4()}"
 
         if DEVELOPMENT_MODE:
+            print("✅ Mock booking created:", booking_id)
             flash("Mock booking confirmed successfully!", "success")
             return redirect(url_for('success'))
         else:
@@ -259,5 +256,5 @@ def success():
     return render_template('success.html')
 
 if __name__ == '__main__':
-    print("Flask server starting on http://localhost:5000")
+    print("🚀 Flask server starting on http://localhost:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
