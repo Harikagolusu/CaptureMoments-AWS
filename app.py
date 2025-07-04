@@ -187,7 +187,7 @@ def booking():
         return redirect(url_for('login', next=request.path))
 
     if request.method == 'POST':
-        print("📩 Form submission received")
+        print("Form submission received")
 
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
@@ -217,7 +217,7 @@ def booking():
         booking_id = f"{photographer}-{uuid.uuid4()}"
 
         if DEVELOPMENT_MODE:
-            print("✅ Mock booking created:", booking_id)
+            print("Mock booking created:", booking_id)
             flash("Mock booking confirmed successfully!", "success")
             return redirect(url_for('success'))
         else:
