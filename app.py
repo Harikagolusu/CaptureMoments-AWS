@@ -30,7 +30,7 @@ if not DEVELOPMENT_MODE:
         users_table = dynamodb.Table('photography_users')
         bookings_table = dynamodb.Table('photography_bookings')
         photographers_table = dynamodb.Table('photographers')
-        sns_topic_arn = "arn:aws:sns:ap-south-1:123456789012:YourTopicName"  # Replace with real ARN
+        sns_topic_arn = "arn:aws:sns:us-east-1:842676002305:Booking-Alert"  # Replace with real ARN
     except NoCredentialsError:
         logger.error("AWS credentials not found.")
         exit()
