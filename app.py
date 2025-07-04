@@ -7,17 +7,17 @@ import re
 import uuid
 import logging
 
-# Enable development mode
+# Enable development mode (no AWS)
 DEVELOPMENT_MODE = True
 
-# Load environment variables
+# Load .env variables
 load_dotenv()
 
-# Initialize Flask app
+# Flask setup
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 
-# Set up logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -185,14 +185,12 @@ def photographers():
 def booking():
     if 'username' not in session:
         flash('Please login to book a photographer', 'error')
-        return redirect(url_for('login', next=request.path))
+        return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # Log form submission
-        print("POST request received")
-        print("Form data:", request.form)
+        print("[DEBUG] POST request received for booking")
+        print("[DEBUG] Raw form data:", request.form)
 
-        # Extract fields
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         name = request.form.get('name')
@@ -204,7 +202,8 @@ def booking():
         payment = request.form.get('payment')
         notes = request.form.get('notes', '')
 
-        # Validate email & phone
+        print("[DEBUG] Extracted data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
+
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
             return redirect(url_for('booking'))
@@ -216,7 +215,7 @@ def booking():
         booking_id = f"{photographer}-{uuid.uuid4()}"
 
         if DEVELOPMENT_MODE:
-            print("Booking saved (mock):", name, event_type, photographer)
+            logger.info(f"[MOCK] Booking saved for {name} | Event: {event_type}")
             flash("Mock booking successful!", "success")
             return redirect(url_for('success'))
         else:
