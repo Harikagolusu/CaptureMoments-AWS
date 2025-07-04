@@ -1,27 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from dotenv import load_dotenv
 import os
 import re
 import uuid
 import logging
 
-# Enable development mode (no AWS)
-DEVELOPMENT_MODE = True
+DEVELOPMENT_MODE = True  # Set to False to enable AWS
 
-# Load .env variables
-load_dotenv()
-
-# Flask setup
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
+app.secret_key = 'dev'
 
-# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AWS mock setup
 if not DEVELOPMENT_MODE:
     import boto3
     from botocore.exceptions import NoCredentialsError
@@ -36,16 +28,18 @@ if not DEVELOPMENT_MODE:
         users_table = dynamodb.Table('photography_users')
         bookings_table = dynamodb.Table('photography_bookings')
         photographers_table = dynamodb.Table('photographers')
+        sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:YourTopicName"  # Replace with your SNS ARN
     except NoCredentialsError:
         logger.error("AWS credentials not found.")
         exit()
 else:
-    logger.warning("DEVELOPMENT MODE: AWS disabled.")
+    logger.warning("Development mode: AWS services are disabled.")
     users_table = None
     bookings_table = None
     photographers_table = None
+    sns = None
+    sns_topic_arn = None
 
-# Routes
 @app.route('/')
 def index():
     if 'username' in session:
@@ -75,7 +69,7 @@ def login():
                 if user and check_password_hash(user['password'], password):
                     session['username'] = username
                     session['fullname'] = user['fullname']
-                    flash("Login successful!", "success")
+                    flash("Login successful", "success")
                     return redirect(url_for('home'))
                 flash("Invalid username or password", "error")
             except Exception as e:
@@ -128,7 +122,7 @@ def signup():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash("Logged out successfully.", "info")
+    flash("Logged out successfully", "info")
     return redirect(url_for('index'))
 
 @app.route('/home')
@@ -178,7 +172,7 @@ def photographers():
                                    availability_data=availability_data)
         except Exception as e:
             logger.error(f"Error fetching photographers: {e}")
-            flash("Could not load photographers.", "error")
+            flash("Could not load photographers", "error")
             return redirect(url_for('home'))
 
 @app.route('/booking', methods=['GET', 'POST'])
@@ -188,9 +182,6 @@ def booking():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        print("[DEBUG] POST request received for booking")
-        print("[DEBUG] Raw form data:", request.form)
-
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         name = request.form.get('name')
@@ -201,8 +192,6 @@ def booking():
         package = request.form.get('package')
         payment = request.form.get('payment')
         notes = request.form.get('notes', '')
-
-        print("[DEBUG] Extracted data:", start_date, end_date, name, email, phone, event_type, photographer, package, payment)
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
@@ -215,8 +204,8 @@ def booking():
         booking_id = f"{photographer}-{uuid.uuid4()}"
 
         if DEVELOPMENT_MODE:
-            logger.info(f"[MOCK] Booking saved for {name} | Event: {event_type}")
-            flash("Mock booking successful!", "success")
+            logger.info(f"Mock booking saved for {name} | Event: {event_type}")
+            flash("Mock booking successful", "success")
             return redirect(url_for('success'))
         else:
             try:
@@ -234,11 +223,29 @@ def booking():
                     'payment': payment,
                     'timestamp': datetime.now().isoformat()
                 })
-                flash("Booking confirmed!", "success")
+
+                sns.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=(
+                        f"New booking confirmed\n\n"
+                        f"Name: {name}\n"
+                        f"Email: {email}\n"
+                        f"Phone: {phone}\n"
+                        f"Event Type: {event_type}\n"
+                        f"Photographer: {photographer}\n"
+                        f"Package: {package}\n"
+                        f"Dates: {start_date} to {end_date}\n"
+                        f"Payment: {payment}\n"
+                        f"Notes: {notes}"
+                    ),
+                    Subject="New Photography Booking Alert"
+                )
+
+                flash("Booking confirmed and SNS alert sent", "success")
                 return redirect(url_for('success'))
             except Exception as e:
                 logger.error(f"Booking error: {e}")
-                flash("Booking failed. Try again.", "error")
+                flash("Booking failed. Try again", "error")
                 return redirect(url_for('booking'))
 
     return render_template('booking.html')
