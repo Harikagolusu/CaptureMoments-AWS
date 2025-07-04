@@ -56,8 +56,8 @@ def login():
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
         next_page = request.args.get('next')
 
         if DEVELOPMENT_MODE:
@@ -89,10 +89,10 @@ def signup():
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        fullname = request.form['fullname']
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
+        fullname = request.form.get('fullname')
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
@@ -150,14 +150,14 @@ def photographers():
     if DEVELOPMENT_MODE:
         photographers = [
             {
-                'photographer_id': 'p1',
+                'photographer_id': '1',
                 'name': 'John Doe',
-                'availability': ['2025-07-10-10AM', '2025-07-12-4PM']
+                'availability': ['2025-07-10', '2025-07-12']
             },
             {
-                'photographer_id': 'p2',
+                'photographer_id': '2',
                 'name': 'Jane Smith',
-                'availability': ['2025-07-15-9AM', '2025-07-18-6PM']
+                'availability': ['2025-07-15', '2025-07-18']
             }
         ]
         availability_data = {
@@ -190,16 +190,20 @@ def booking():
     booked_slots = []
 
     if request.method == 'POST':
-        selected_date = request.form['selected_date']
-        selected_slot = request.form['selected_slot']
-        name = request.form['name']
-        email = request.form['email']
-        phone = request.form['phone']
-        event_type = request.form['event_type']
-        photographer = request.form['photographer']
-        package = request.form['package']
-        payment = request.form['payment']
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        name = request.form.get('name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        event_type = request.form.get('event_type')
+        photographer = request.form.get('photographer')
+        package = request.form.get('package')
+        payment = request.form.get('payment')
         notes = request.form.get('notes', '')
+
+        if not all([start_date, end_date, name, email, phone, event_type, photographer, package, payment]):
+            flash("Please fill all required fields", "error")
+            return redirect(url_for('booking'))
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             flash("Invalid email format", "error")
@@ -209,7 +213,7 @@ def booking():
             flash("Invalid phone number", "error")
             return redirect(url_for('booking'))
 
-        slot_id = f"{photographer}-{selected_date}-{selected_slot}"
+        slot_id = f"{photographer}-{start_date}-{end_date}"
         if slot_id in booked_slots:
             flash("Slot already booked!", "error")
             return redirect(url_for('booking'))
@@ -230,7 +234,8 @@ def booking():
                     'event_type': event_type,
                     'photographer': photographer,
                     'package': package,
-                    'date_slot': slot_id,
+                    'start_date': start_date,
+                    'end_date': end_date,
                     'notes': notes,
                     'payment': payment,
                     'timestamp': datetime.now().isoformat()
@@ -244,15 +249,15 @@ def booking():
                 return redirect(url_for('booking'))
 
     return render_template('booking.html')
+
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
-
 
 @app.route('/success')
 def success():
     return render_template('success.html')
 
 if __name__ == '__main__':
-    print(" Flask server starting on http://localhost:5000")
+    print("Flask server starting on http://localhost:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
